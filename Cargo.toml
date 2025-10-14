@@ -1,0 +1,14 @@
+[package]
+name = "field_path"
+description = "Type-safe, no-std field access and reflection utilities."
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/voxell-tech/field_path"
+readme = "README.md"
+exclude = ["/assets/", "/.github/", "/examples/"]
+keywords = ["macro", "field", "path", "accessor", "registry"]
+categories = ["no-std", "rust-patterns"]
+
+[dependencies]
+hashbrown = { version = "0.16", default-features = false, features = ["default-hasher", "inline-more"] }
