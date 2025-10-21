@@ -30,19 +30,18 @@ use core::marker::PhantomData;
 ///
 /// # Example
 /// ```
-/// use field_path::field::{Field, field};
+/// use field_path::field::{Field, field, stringify_field};
 ///
 /// struct Player {
 ///     name: String,
 ///     age: u32,
 /// }
 ///
-/// let name: Field<Player, String> = field!(<Player>::name);
-/// let age: Field<Player, u32> = field!(<Player>::age);
+/// const PLAYER_AGE: Field<Player, u32> = Field::new(
+///     stringify_field!(::age)
+/// );
 ///
-/// assert_ne!(name.untyped(), age.untyped());
-/// assert_eq!(name.field_path(), "::name");
-/// assert_eq!(age.field_path(), "::age");
+/// assert_eq!(PLAYER_AGE.field_path(), "::age");
 /// ```
 #[derive(Debug, Hash, PartialEq, Eq)]
 pub struct Field<S, T> {
