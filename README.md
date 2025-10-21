@@ -24,7 +24,7 @@ specific types.
 ## Example
 
 ```rs
-use field_path::accessor::{Accessor, FieldAccessorRegistry};
+use field_path::accessor::{FieldAccessorRegistry, accessor};
 use field_path::field::field;
 
 #[derive(Default)]
@@ -34,24 +34,18 @@ struct Vec2<T> {
 }
 
 let mut registry = FieldAccessorRegistry::default();
-let field = field!(<Vec2<f32>>::x).untyped();
+let field = field!(<Vec2<f32>>::x);
 
 // Register accessors.
-registry.register(
-    field,
-    Accessor {
-        ref_fn: |v: &Vec2<f32>| &v.x,
-        mut_fn: |v: &mut Vec2<f32>| &mut v.x,
-    },
-);
+registry.register_typed(field, accessor!(<Vec2<f32>>::x));
 
 // Access field generically.
 let mut v = Vec2::default();
-let accessor = registry.get::<Vec2<f32>, f32>(&field).unwrap();
+let accessor =
+    registry.get::<Vec2<f32>, f32>(&field.untyped()).unwrap();
 
-*(accessor.mut_fn)(&mut v) = 42.0;
-assert_eq!(*(accessor.ref_fn)(&v), 42.0);
-
+*accessor.get_mut(&mut v) = 42.0;
+assert_eq!(accessor.get_ref(&v), &42.0);
 ```
 
 ## Join the community!

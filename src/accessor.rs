@@ -41,8 +41,8 @@ use crate::field::{Field, UntypedField};
 /// ```
 #[derive(Debug, Clone, Copy)]
 pub struct Accessor<S: 'static, T: 'static> {
-    pub ref_fn: fn(&S) -> &T,
-    pub mut_fn: fn(&mut S) -> &mut T,
+    ref_fn: fn(&S) -> &T,
+    mut_fn: fn(&mut S) -> &mut T,
 }
 
 impl<S, T> Accessor<S, T> {
@@ -201,8 +201,8 @@ impl FieldAccessorRegistry {
 /// let accessor = registry.get::<Foo, i32>(&"foo").unwrap();
 /// let mut foo = Foo { value: 123 };
 ///
-/// assert_eq!(*(accessor.ref_fn)(&foo), 123);
-/// *(accessor.mut_fn)(&mut foo) = 999;
+/// assert_eq!(accessor.get_ref(&foo), &123);
+/// *accessor.get_mut(&mut foo) = 999;
 /// assert_eq!(foo.value, 999);
 /// ```
 #[derive(Debug)]
