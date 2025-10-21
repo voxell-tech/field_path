@@ -11,8 +11,6 @@
 use core::any::TypeId;
 use core::marker::PhantomData;
 
-// use bevy_ecs::prelude::*;
-
 /// A statically typed field path from a source type `S` to a target
 /// type `T`.
 ///
@@ -137,22 +135,19 @@ impl<S, T> _FieldBuilder<S, T> {
 ///     age: u32,
 /// }
 ///
-/// let player_name: Field<Player, String> = field!(<Player>::name);
-/// let player_age: Field<Player, u32> = field!(<Player>::age);
+/// const PLAYER_NAME: Field<Player, String> = field!(<Player>::name);
+/// let PLAYER_AGE: Field<Player, u32> = field!(<Player>::age);
 ///
-/// assert_ne!(player_name.untyped(), player_age.untyped());
+/// assert_ne!(PLAYER_NAME.untyped(), PLAYER_AGE.untyped());
 /// ```
 #[macro_export]
 macro_rules! field {
     (<$source:ty>$(::$field:tt)*) => {
-        {
-            let builder = $crate::field::_FieldBuilder::new(
-                |source: $source| source$(.$field)*,
-                $crate::stringify_field!($(::$field)*),
-            );
-
-            builder.build()
-        }
+        $crate::field::_FieldBuilder::new(
+            |source: $source| source$(.$field)*,
+            $crate::stringify_field!($(::$field)*),
+        )
+        .build()
     };
 }
 pub use field;
@@ -282,14 +277,19 @@ mod tests {
     }
 
     #[test]
-    fn test_field() {
-        let field = field!(<Foo>);
-        assert_eq!(field.field_path, "");
+    fn field_path_matches() {
+        const FIELD: Field<Foo, Foo> = field!(<Foo>);
+        assert_eq!(FIELD.field_path, "");
 
-        let field = field!(<Foo>::0);
-        assert_eq!(field.field_path, stringify_field!(::0));
+        const FIELD_0: Field<Foo, u32> = field!(<Foo>::0);
+        assert_eq!(FIELD_0.field_path, stringify_field!(::0), "::0");
 
-        let field = field!(<NestedFoo>::inner::0);
-        assert_eq!(field.field_path, stringify_field!(::inner::0));
+        const FIELD_INNER_0: Field<NestedFoo, u32> =
+            field!(<NestedFoo>::inner::0);
+        assert_eq!(
+            FIELD_INNER_0.field_path,
+            stringify_field!(::inner::0),
+            "::inner::0"
+        );
     }
 }
