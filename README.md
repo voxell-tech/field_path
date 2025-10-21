@@ -10,11 +10,11 @@ identifiers and accessors that preserve type information.
 
 ## Core Concepts
 
-- `Field` — Represents a unique, type-safe identifier for a
+- `Field`: Represents a unique, type-safe identifier for a
   field path within a struct.
-- `Accessor` — A generic wrapper providing read and write
+- `Accessor`: A generic wrapper providing read and write
   access to a field.
-- `FieldAccessorRegistry` — A mapping between fields and their
+- `FieldAccessorRegistry`: A mapping between fields and their
   accessors for lookup and dynamic use.
 
 Together, these components allow building flexible systems that

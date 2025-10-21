@@ -10,12 +10,18 @@ use core::any::TypeId;
 use core::hash::Hash;
 use hashbrown::HashMap;
 
-use crate::field::UntypedField;
+use crate::field::{Field, UntypedField};
 
 /// A typed accessor to a field of type `T` within a source type `S`.
 ///
 /// This holds both immutable and mutable function pointers, which
 /// allows retrieving references to the target field inside a source.
+///
+/// # Validation
+///
+/// The [`accessor!`] macro ensures that both immutable and mutable
+/// references are pointing towards the same field. Constructing
+/// `Accessor` manually may result in mismatches.
 ///
 /// # Example
 /// ```
@@ -26,11 +32,11 @@ use crate::field::UntypedField;
 /// fn ref_fn(s: &Foo) -> &i32 { &s.value }
 /// fn mut_fn(s: &mut Foo) -> &mut i32 { &mut s.value }
 ///
-/// let accessor = Accessor { ref_fn, mut_fn };
+/// const FOO_ACC: Accessor<Foo, i32> = Accessor::new(ref_fn, mut_fn);
 /// let mut foo = Foo { value: 42 };
 ///
-/// assert_eq!(*(accessor.ref_fn)(&foo), 42);
-/// *(accessor.mut_fn)(&mut foo) = 999;
+/// assert_eq!(FOO_ACC.get_ref(&foo), &42);
+/// *FOO_ACC.get_mut(&mut foo) = 999;
 /// assert_eq!(foo.value, 999);
 /// ```
 #[derive(Debug, Clone, Copy)]
@@ -40,10 +46,58 @@ pub struct Accessor<S: 'static, T: 'static> {
 }
 
 impl<S, T> Accessor<S, T> {
+    pub const fn new(
+        ref_fn: fn(&S) -> &T,
+        mut_fn: fn(&mut S) -> &mut T,
+    ) -> Self {
+        Self { ref_fn, mut_fn }
+    }
+
+    pub fn get_ref<'a>(&self, source: &'a S) -> &'a T {
+        (self.ref_fn)(source)
+    }
+
+    pub fn get_mut<'a>(&self, source: &'a mut S) -> &'a mut T {
+        (self.mut_fn)(source)
+    }
+
     pub fn untyped(self) -> UntypedAccessor {
         UntypedAccessor::new(self.ref_fn, self.mut_fn)
     }
 }
+
+/// Creates an [`Accessor`] that ensures the fields being accessed are
+/// correct for both immutable and mutable reference.
+///
+/// # Example
+/// ```
+/// use field_path::accessor::{Accessor, accessor};
+///
+/// struct Foo { value: i32 }
+///
+/// const FOO_ACC: Accessor<Foo, i32> = accessor!(<Foo>::value);
+/// let mut foo = Foo { value: 42 };
+///
+/// assert_eq!(FOO_ACC.get_ref(&foo), &42);
+/// *FOO_ACC.get_mut(&mut foo) = 999;
+/// assert_eq!(foo.value, 999);
+/// ```
+#[macro_export]
+macro_rules! accessor {
+    (<$source:ty>) => {
+        $crate::accessor::Accessor::new(
+            |s: &$source| s,
+            |s: &mut $source| s,
+        )
+    };
+    (<$source:ty>$(::$field:tt)+) => {
+        $crate::accessor::Accessor::new(
+            |s: &$source| &s$(.$field)+,
+            |s: &mut $source| &mut s$(.$field)+
+        )
+    };
+}
+pub use accessor;
 
 /// A type-erased version of [`Accessor`].
 ///
@@ -118,6 +172,18 @@ impl<S, T> From<Accessor<S, T>> for UntypedAccessor {
 /// An [`AccessorRegistry`] using [`UntypedField`] as the key type.
 pub type FieldAccessorRegistry = AccessorRegistry<UntypedField>;
 
+impl FieldAccessorRegistry {
+    /// Registers a [`Field`] and [`Accessor`] pair in a type-safe
+    /// manner.
+    pub fn register_typed<S, T>(
+        &mut self,
+        field: Field<S, T>,
+        accessor: Accessor<S, T>,
+    ) {
+        self.register(field.untyped(), accessor);
+    }
+}
+
 /// A registry mapping keys to [`UntypedAccessor`]s.
 ///
 /// Provides convenient registration of typed accessors and
@@ -125,15 +191,12 @@ pub type FieldAccessorRegistry = AccessorRegistry<UntypedField>;
 ///
 /// # Example
 /// ```
-/// use field_path::accessor::{Accessor, AccessorRegistry};
+/// use field_path::accessor::{AccessorRegistry, accessor};
 ///
 /// struct Foo { value: i32 }
 ///
-/// fn ref_fn(s: &Foo) -> &i32 { &s.value }
-/// fn mut_fn(s: &mut Foo) -> &mut i32 { &mut s.value }
-///
 /// let mut registry = AccessorRegistry::new();
-/// registry.register("foo", Accessor { ref_fn, mut_fn });
+/// registry.register("foo", accessor!(<Foo>::value));
 ///
 /// let accessor = registry.get::<Foo, i32>(&"foo").unwrap();
 /// let mut foo = Foo { value: 123 };
@@ -216,26 +279,9 @@ mod tests {
         y: f32,
     }
 
-    fn foo_x_ref(foo: &Foo) -> &i32 {
-        &foo.x
-    }
-    fn foo_x_mut(foo: &mut Foo) -> &mut i32 {
-        &mut foo.x
-    }
-
-    fn foo_y_ref(foo: &Foo) -> &f32 {
-        &foo.y
-    }
-    fn foo_y_mut(foo: &mut Foo) -> &mut f32 {
-        &mut foo.y
-    }
-
     #[test]
     fn accessor_roundtrip_typed_untyped() {
-        let acc: Accessor<Foo, i32> = Accessor {
-            ref_fn: foo_x_ref,
-            mut_fn: foo_x_mut,
-        };
+        let acc: Accessor<Foo, i32> = accessor!(<Foo>::x);
 
         let untyped = acc.untyped();
         let typed_back: Accessor<Foo, i32> = untyped.typed().unwrap();
@@ -252,10 +298,7 @@ mod tests {
 
     #[test]
     fn untyped_typed_mismatch_fails() {
-        let acc: Accessor<Foo, i32> = Accessor {
-            ref_fn: foo_x_ref,
-            mut_fn: foo_x_mut,
-        };
+        let acc: Accessor<Foo, i32> = accessor!(<Foo>::x);
 
         let untyped = acc.untyped();
 
@@ -269,21 +312,8 @@ mod tests {
         let mut registry: AccessorRegistry<&'static str> =
             AccessorRegistry::new();
 
-        registry.register(
-            "foo_x",
-            Accessor {
-                ref_fn: foo_x_ref,
-                mut_fn: foo_x_mut,
-            },
-        );
-
-        registry.register(
-            "foo_y",
-            Accessor {
-                ref_fn: foo_y_ref,
-                mut_fn: foo_y_mut,
-            },
-        );
+        registry.register("foo_x", accessor!(<Foo>::x));
+        registry.register("foo_y", accessor!(<Foo>::y));
 
         let mut foo = Foo { x: 10, y: 1.5 };
 
@@ -315,13 +345,7 @@ mod tests {
         let mut registry: AccessorRegistry<&'static str> =
             AccessorRegistry::new();
 
-        registry.register(
-            "foo_x",
-            Accessor {
-                ref_fn: foo_x_ref,
-                mut_fn: foo_x_mut,
-            },
-        );
+        registry.register("foo_x", accessor!(<Foo>::x));
 
         let res = registry.get::<Foo, f32>(&"foo_x");
         assert!(matches!(res, Err(AccessorRegErr::TypeMismatch)));
