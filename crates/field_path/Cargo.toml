@@ -1,0 +1,21 @@
+[package]
+name = "field_path"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Type-safe, no-std field access and reflection utilities."
+keywords = ["field", "path", "accessor", "registry", "macro"]
+categories = ["no-std", "rust-patterns"]
+readme = "./README.md"
+
+[dependencies]
+field_path_derive.workspace = true
+hashbrown.workspace = true
+linkme.workspace = true
+macro_magic.workspace = true
+
+[features]
+default = ["auto_registry"]
+registry = []
+auto_registry = ["registry"]

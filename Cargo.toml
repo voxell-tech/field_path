@@ -1,14 +1,16 @@
-[package]
-name = "field_path"
-description = "Type-safe, no-std field access and reflection utilities."
-version = "0.2.1"
+[workspace]
+resolver = "2"
+members = ["crates/*", ]
+
+[workspace.package]
+version = "0.3.0"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/voxell-tech/field_path"
-readme = "README.md"
-exclude = ["/assets/", "/.github/", "/examples/"]
-keywords = ["macro", "field", "path", "accessor", "registry"]
-categories = ["no-std", "rust-patterns"]
 
-[dependencies]
-hashbrown = { version = "0.16", default-features = false, features = ["default-hasher", "inline-more"] }
+[workspace.dependencies]
+field_path = { version = "0.3.0", path = "crates/field_path" }
+field_path_derive = { version = "0.3.0", path = "crates/field_path_derive" }
+hashbrown = { version = "0.16.1", default-features = false, features = ["default-hasher", "inline-more"] }
+linkme = "0.3.35"
+macro_magic = "0.6.0"

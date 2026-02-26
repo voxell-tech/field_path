@@ -1,13 +1,3 @@
-//! Provides abstractions for working with typed fields in a
-//! type-erased, yet type-safe manner.
-//!
-//! A [`Field`] represents a way to identify and a field path within a
-//! data structure.
-//!
-//! This module is fully independent and can be used in isolation.
-//! It is intended to serve as a flexible building block for systems
-//! that need to store, compare, or retrieve fields dynamically.
-
 use core::any::TypeId;
 use core::marker::PhantomData;
 
@@ -172,7 +162,7 @@ pub struct UntypedField {
 }
 
 impl UntypedField {
-    pub fn new<S: 'static, T: 'static>(
+    pub const fn new<S: 'static, T: 'static>(
         field_path: &'static str,
     ) -> Self {
         Self {
@@ -182,12 +172,26 @@ impl UntypedField {
         }
     }
 
-    pub fn placeholder() -> Self {
+    pub const fn placeholder() -> Self {
         Self::placeholder_with_path("$")
     }
 
-    pub fn placeholder_with_path(field_path: &'static str) -> Self {
+    pub const fn placeholder_with_path(
+        field_path: &'static str,
+    ) -> Self {
         Self::new::<(), ()>(field_path)
+    }
+
+    pub const fn raw(
+        source_id: TypeId,
+        target_id: TypeId,
+        field_path: &'static str,
+    ) -> Self {
+        Self {
+            source_id,
+            target_id,
+            field_path,
+        }
     }
 
     /// Get the [`TypeId`] of the source type.

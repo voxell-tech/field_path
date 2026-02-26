@@ -1,0 +1,19 @@
+[package]
+name = "field_path_derive"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Derive macros for the `field_path` crate."
+keywords = ["field", "path", "accessor", "registry", "derive"]
+categories = ["no-std", "rust-patterns"]
+readme = "./README.md"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+macro_magic = { workspace = true, features = ["proc_support"] }
+proc-macro2 = "1.0.106"
+quote = "1.0.44"
+syn = "2.0.117"
