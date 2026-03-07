@@ -11,6 +11,10 @@
 use core::any::TypeId;
 use core::marker::PhantomData;
 
+// For docs.
+#[expect(unused_imports)]
+use crate::field;
+
 /// A statically typed field path from a source type `S` to a target
 /// type `T`.
 ///
@@ -28,7 +32,9 @@ use core::marker::PhantomData;
 ///
 /// # Example
 /// ```
-/// use field_path::field::{Field, field, stringify_field};
+/// use field_path::field::Field;
+/// use field_path::field;
+/// use field_path::stringify_field;
 ///
 /// struct Player {
 ///     name: String,
@@ -128,7 +134,8 @@ impl<S, T> _FieldBuilder<S, T> {
 /// # Example
 ///
 /// ```
-/// use field_path::field::{Field, field};
+/// use field_path::field::Field;
+/// use field_path::field;
 ///
 /// struct Player {
 ///     name: String,
@@ -150,7 +157,6 @@ macro_rules! field {
         .build()
     };
 }
-pub use field;
 
 /// A type-erased version of [`Field`]. It uniquely identifies a
 /// target field path within a source `struct`.
@@ -256,7 +262,7 @@ where
 /// # Example
 ///
 /// ```
-/// use field_path::field::stringify_field;
+/// use field_path::stringify_field;
 ///
 /// let stringify = stringify_field!(::translation::x);
 /// assert_eq!(stringify, "::translation::x");
@@ -267,7 +273,6 @@ macro_rules! stringify_field {
         concat!($("::", stringify!($field),)*)
     };
 }
-pub use stringify_field;
 
 #[cfg(test)]
 mod tests {

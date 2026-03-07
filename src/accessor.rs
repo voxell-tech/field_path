@@ -1,29 +1,32 @@
-//! Accessor system for mapping source structures to target fields.
+//! Accessors for mapping source structures to target fields.
 //!
-//! This module provides both typed [`Accessor`]s (compile-time
-//! source/target types) and type-erased [`UntypedAccessor`]s
-//! (runtime checked).
+//! This module defines the core [`Accessor`] and [`UntypedAccessor`]
+//! types, providing a way to abstract over field access within a
+//! source structure.
 //!
-//! They can be registered and retrieved via the [`AccessorRegistry`].
+//! Use the [`accessor!`] macro to safely generate accessors. It
+//! ensures that the immutable and mutable paths to a field are
+//! identical, preventing logical errors.
 
 use core::any::TypeId;
-use core::hash::Hash;
-use hashbrown::HashMap;
 
-use crate::field::{Field, UntypedField};
+// For docs.
+#[expect(unused_imports)]
+use crate::accessor;
 
 /// A typed accessor to a field of type `T` within a source type `S`.
 ///
 /// This holds both immutable and mutable function pointers, which
 /// allows retrieving references to the target field inside a source.
 ///
-/// # Validation
+/// ## Validation
 ///
 /// The [`accessor!`] macro ensures that both immutable and mutable
 /// references are pointing towards the same field. Constructing
 /// `Accessor` manually may result in mismatches.
 ///
-/// # Example
+/// ## Example
+///
 /// ```
 /// use field_path::accessor::Accessor;
 ///
@@ -69,9 +72,11 @@ impl<S, T> Accessor<S, T> {
 /// Creates an [`Accessor`] that ensures the fields being accessed are
 /// correct for both immutable and mutable reference.
 ///
-/// # Example
+/// ## Example
+///
 /// ```
-/// use field_path::accessor::{Accessor, accessor};
+/// use field_path::accessor;
+/// use field_path::accessor::Accessor;
 ///
 /// struct Foo { value: i32 }
 ///
@@ -97,7 +102,6 @@ macro_rules! accessor {
         )
     };
 }
-pub use accessor;
 
 /// A type-erased version of [`Accessor`].
 ///
@@ -171,106 +175,6 @@ impl<S, T> From<Accessor<S, T>> for UntypedAccessor {
     }
 }
 
-/// An [`AccessorRegistry`] using [`UntypedField`] as the key type.
-pub type FieldAccessorRegistry = AccessorRegistry<UntypedField>;
-
-impl FieldAccessorRegistry {
-    /// Registers a [`Field`] and [`Accessor`] pair in a type-safe
-    /// manner.
-    pub fn register_typed<S, T>(
-        &mut self,
-        field: Field<S, T>,
-        accessor: Accessor<S, T>,
-    ) {
-        self.register(field.untyped(), accessor);
-    }
-}
-
-/// A registry mapping keys to [`UntypedAccessor`]s.
-///
-/// Provides convenient registration of typed accessors and
-/// retrieval as typed [`Accessor`]s with runtime checking.
-///
-/// # Example
-/// ```
-/// use field_path::accessor::{AccessorRegistry, accessor};
-///
-/// struct Foo { value: i32 }
-///
-/// let mut registry = AccessorRegistry::new();
-/// registry.register("foo", accessor!(<Foo>::value));
-///
-/// let accessor = registry.get::<Foo, i32>(&"foo").unwrap();
-/// let mut foo = Foo { value: 123 };
-///
-/// assert_eq!(accessor.get_ref(&foo), &123);
-/// *accessor.get_mut(&mut foo) = 999;
-/// assert_eq!(foo.value, 999);
-/// ```
-#[derive(Debug)]
-pub struct AccessorRegistry<K> {
-    accessors: HashMap<K, UntypedAccessor>,
-}
-
-impl<K> AccessorRegistry<K> {
-    /// Construct an empty [`AccessorRegistry`].
-    pub fn new() -> Self {
-        Self {
-            accessors: HashMap::new(),
-        }
-    }
-}
-
-impl<K: Eq + Hash> AccessorRegistry<K> {
-    /// Registers an [`UntypedAccessor`] for a given key.
-    ///
-    /// Will overwrite existing accessor.
-    pub fn register(
-        &mut self,
-        key: K,
-        accessor: impl Into<UntypedAccessor>,
-    ) {
-        self.accessors.insert(key, accessor.into());
-    }
-
-    /// Retrieve a typed [`Accessor`] from the registry.
-    ///
-    /// Returns an [`AccessorRegErr`] if the key does not exist or
-    /// if the types do not match.
-    pub fn get<S: 'static, T: 'static>(
-        &self,
-        key: &K,
-    ) -> Result<Accessor<S, T>, AccessorRegErr> {
-        self.accessors
-            .get(key)
-            .ok_or(AccessorRegErr::KeyNotFound)?
-            .typed()
-            .ok_or(AccessorRegErr::TypeMismatch)
-    }
-}
-
-impl<K> Default for AccessorRegistry<K> {
-    fn default() -> Self {
-        Self {
-            accessors: HashMap::new(),
-        }
-    }
-}
-
-unsafe impl<K> Send for AccessorRegistry<K> {}
-unsafe impl<K> Sync for AccessorRegistry<K> {}
-
-/// Possible error variants when getting an [`Accessor`]
-/// from the [`AccessorRegistry`].
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum AccessorRegErr {
-    /// The requested key was not found in the registry.
-    KeyNotFound,
-    /// The [`Accessor`] exists but the source/target types did
-    /// not match.
-    TypeMismatch,
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -307,49 +211,5 @@ mod tests {
         // Mismatched type parameters should return None
         let wrong: Option<Accessor<Foo, f32>> = untyped.typed();
         assert!(wrong.is_none());
-    }
-
-    #[test]
-    fn registry_register_and_get_success() {
-        let mut registry: AccessorRegistry<&'static str> =
-            AccessorRegistry::new();
-
-        registry.register("foo_x", accessor!(<Foo>::x));
-        registry.register("foo_y", accessor!(<Foo>::y));
-
-        let mut foo = Foo { x: 10, y: 1.5 };
-
-        let x_accessor = registry.get::<Foo, i32>(&"foo_x").unwrap();
-        assert_eq!((x_accessor.ref_fn)(&foo), &10);
-
-        let y_accessor = registry.get::<Foo, f32>(&"foo_y").unwrap();
-        assert_eq!((y_accessor.ref_fn)(&foo), &1.5);
-
-        // Mutate via accessor
-        *(x_accessor.mut_fn)(&mut foo) = 77;
-        *(y_accessor.mut_fn)(&mut foo) = 2.5;
-
-        assert_eq!(foo.x, 77);
-        assert_eq!(foo.y, 2.5);
-    }
-
-    #[test]
-    fn registry_key_not_found_error() {
-        let registry: AccessorRegistry<&'static str> =
-            AccessorRegistry::new();
-
-        let res = registry.get::<Foo, i32>(&"missing");
-        assert!(matches!(res, Err(AccessorRegErr::KeyNotFound)));
-    }
-
-    #[test]
-    fn registry_type_mismatch_error() {
-        let mut registry: AccessorRegistry<&'static str> =
-            AccessorRegistry::new();
-
-        registry.register("foo_x", accessor!(<Foo>::x));
-
-        let res = registry.get::<Foo, f32>(&"foo_x");
-        assert!(matches!(res, Err(AccessorRegErr::TypeMismatch)));
     }
 }
