@@ -7,8 +7,6 @@
 [![CI](https://github.com/voxell-tech/field_path/workflows/CI/badge.svg)](https://github.com/voxell-tech/field_path/actions)
 [![Discord](https://img.shields.io/discord/442334985471655946.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/Mhnyp6VYEQ)
 
-# Field Path
-
 **Field Path** provides a lightweight and type-safe abstraction for
 referencing and accessing nested fields within structs.
 
