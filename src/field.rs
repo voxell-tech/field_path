@@ -67,7 +67,7 @@ impl<S, T> Field<S, T> {
     }
 
     /// Returns the raw field path string.
-    pub fn field_path(&self) -> &'static str {
+    pub const fn field_path(&self) -> &'static str {
         self.field_path
     }
 }
@@ -78,7 +78,7 @@ where
     T: 'static,
 {
     /// Converts into a [`UntypedField`] type.
-    pub fn untyped(&self) -> UntypedField {
+    pub const fn untyped(&self) -> UntypedField {
         UntypedField::new::<S, T>(self.field_path)
     }
 }
@@ -172,7 +172,7 @@ pub struct UntypedField {
 }
 
 impl UntypedField {
-    pub fn new<S: 'static, T: 'static>(
+    pub const fn new<S: 'static, T: 'static>(
         field_path: &'static str,
     ) -> Self {
         Self {
@@ -182,42 +182,47 @@ impl UntypedField {
         }
     }
 
-    pub fn placeholder() -> Self {
+    pub const fn placeholder() -> Self {
         Self::placeholder_with_path("$")
     }
 
-    pub fn placeholder_with_path(field_path: &'static str) -> Self {
+    pub const fn placeholder_with_path(
+        field_path: &'static str,
+    ) -> Self {
         Self::new::<(), ()>(field_path)
     }
 
     /// Get the [`TypeId`] of the source type.
-    pub fn source_id(&self) -> TypeId {
+    pub const fn source_id(&self) -> TypeId {
         self.source_id
     }
 
     /// Get the [`TypeId`] of the target type.
-    pub fn target_id(&self) -> TypeId {
+    pub const fn target_id(&self) -> TypeId {
         self.target_id
     }
 
     /// See [`Field::field_path`].
-    pub fn field_path(&self) -> &'static str {
+    pub const fn field_path(&self) -> &'static str {
         self.field_path
     }
 
-    /// Converts into a typed [`Field<S, T>`].
-    ///
-    /// # Panics
-    ///
-    /// Panics if the type does not match.
-    pub fn typed<S: 'static, T: 'static>(self) -> Field<S, T> {
-        assert_eq!(TypeId::of::<S>(), self.source_id);
-        assert_eq!(TypeId::of::<T>(), self.target_id);
-        self.typed_unchecked()
+    /// Attempt to re-interpret this accessor as a typed [`Field`],
+    /// returning `None` if the [`TypeId`]s do not match.
+    pub fn typed<S: 'static, T: 'static>(
+        self,
+    ) -> Option<Field<S, T>> {
+        if self.source_id == TypeId::of::<S>()
+            && self.target_id == TypeId::of::<T>()
+        {
+            return Some(self.typed_unchecked());
+        }
+
+        None
     }
 
     /// Converts into a typed [`Field<S, T>`] without type checks.
-    pub fn typed_unchecked<S: 'static, T>(self) -> Field<S, T> {
+    pub const fn typed_unchecked<S: 'static, T>(self) -> Field<S, T> {
         Field::new(self.field_path)
     }
 }
