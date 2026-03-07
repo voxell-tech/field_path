@@ -61,7 +61,7 @@ impl<S, T> Accessor<S, T> {
         (self.mut_fn)(source)
     }
 
-    pub fn untyped(self) -> UntypedAccessor {
+    pub const fn untyped(self) -> UntypedAccessor {
         UntypedAccessor::new(self.ref_fn, self.mut_fn)
     }
 }
@@ -114,7 +114,7 @@ pub struct UntypedAccessor {
 
 impl UntypedAccessor {
     /// Create a new type-erased accessor from a typed accessor pair.
-    pub fn new<S: 'static, T: 'static>(
+    pub const fn new<S: 'static, T: 'static>(
         ref_fn: fn(&S) -> &T,
         mut_fn: fn(&mut S) -> &mut T,
     ) -> Self {
@@ -133,7 +133,9 @@ impl UntypedAccessor {
     ///
     /// Undefined behavior if `S` and `T` do not match the types used
     /// when constructing this accessor.
-    pub unsafe fn typed_unchecked<S, T>(self) -> Accessor<S, T> {
+    pub const unsafe fn typed_unchecked<S, T>(
+        self,
+    ) -> Accessor<S, T> {
         unsafe {
             Accessor {
                 ref_fn: core::mem::transmute::<*const (), fn(&S) -> &T>(
