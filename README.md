@@ -7,32 +7,37 @@
 [![CI](https://github.com/voxell-tech/field_path/workflows/CI/badge.svg)](https://github.com/voxell-tech/field_path/actions)
 [![Discord](https://img.shields.io/discord/442334985471655946.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/Mhnyp6VYEQ)
 
-**`field_path`** provides a lightweight and type-safe abstraction
-for referencing and accessing nested fields within structs.
+# Field Path
+
+**Field Path** provides a lightweight and type-safe abstraction for
+referencing and accessing nested fields within structs.
 
 The crate is designed to make it easier to generically inspect or
-mutate fields without relying on heavy reflection systems or
-unsafe code. It does this through a combination of field
-identifiers and accessors that preserve type information.
+mutate fields without relying on heavy reflection systems or unsafe
+code. It does this through a combination of field identifiers and
+accessors that preserve type information.
 
 ## Core Concepts
 
 - `Field`: Represents a unique, type-safe identifier for a
   field path within a struct.
-- `Accessor`: A generic wrapper providing read and write
-  access to a field.
+- `Accessor`: A generic wrapper providing read and write access
+  to a field.
 - `FieldAccessorRegistry`: A mapping between fields and their
   accessors for lookup and dynamic use.
 
-Together, these components allow building flexible systems that
-can access or manipulate struct data without tightly coupling to
-specific types.
+  (only available with the "registry" feature, enabled by default)
+
+Together, these components allow building flexible systems that can
+access or manipulate struct data without tightly coupling to specific
+types.
 
 ## Example
 
-```rs
-use field_path::accessor::{FieldAccessorRegistry, accessor};
-use field_path::field::field;
+```rust
+use field_path::registry::FieldAccessorRegistry;
+use field_path::field;
+use field_path::accessor;
 
 #[derive(Default)]
 struct Vec2<T> {
