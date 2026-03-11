@@ -61,16 +61,19 @@ impl<S, T> Accessor<S, T> {
         Self { ref_fn, mut_fn }
     }
 
+    /// Get an immutable reference to the target type.
     #[inline]
     pub fn get_ref<'a>(&self, source: &'a S) -> &'a T {
         (self.ref_fn)(source)
     }
 
+    /// Get a mutable reference to the target type.
     #[inline]
     pub fn get_mut<'a>(&self, source: &'a mut S) -> &'a mut T {
         (self.mut_fn)(source)
     }
 
+    /// Erases the type by converting it into an [`UntypedAccessor`].
     #[inline]
     pub const fn untyped(&self) -> UntypedAccessor {
         UntypedAccessor::new(self.ref_fn, self.mut_fn)

@@ -84,7 +84,7 @@ where
     S: 'static,
     T: 'static,
 {
-    /// Converts into a [`UntypedField`] type.
+    /// Erases the type by converting it into an [`UntypedField`].
     #[inline]
     pub const fn untyped(&self) -> UntypedField {
         UntypedField::new::<S, T>(self.field_path)
@@ -124,6 +124,7 @@ impl<S, T> _FieldBuilder<S, T> {
         }
     }
 
+    /// Creates the [`Field`] struct.
     #[inline]
     pub const fn build(self) -> Field<S, T> {
         Field {
@@ -195,11 +196,17 @@ impl UntypedField {
         }
     }
 
+    /// Creates a placeholder.
+    ///
+    /// This does not represent any valid path.
     #[inline]
     pub const fn placeholder() -> Self {
         Self::placeholder_with_path("$")
     }
 
+    /// Creates a placeholder with a custom path.
+    ///
+    /// The path may be valid, but the types will be empty.
     #[inline]
     pub const fn placeholder_with_path(
         field_path: &'static str,

@@ -1,6 +1,14 @@
+//! This module defines the [`FieldAccessor`] type, which pairs a
+//! [`Field`] (representing the static path name) with an
+//! [`Accessor`] (providing functional pointers for data access).
+//!
+//! Use the [`field_accessor!`] macro to ensure that the path name and
+//! the access logic are always synchronized to the same field.
+
 use crate::accessor::Accessor;
 use crate::field::Field;
 
+/// A specialized container pairing a [`Field`] with its [`Accessor`].
 pub struct FieldAccessor<S, T>
 where
     S: 'static,
@@ -15,6 +23,7 @@ where
     S: 'static,
     T: 'static,
 {
+    #[inline]
     pub const fn new(
         field: Field<S, T>,
         accessor: Accessor<S, T>,
@@ -35,6 +44,7 @@ where
 /// struct Foo { value: i32 }
 ///
 /// const FOO_FIELD_ACC: FieldAccessor<Foo, i32> = field_accessor!(<Foo>::value);
+///
 /// assert_eq!(FOO_FIELD_ACC.field.field_path(), "::value");
 ///
 /// let mut foo = Foo { value: 42 };
