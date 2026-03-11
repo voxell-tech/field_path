@@ -10,6 +10,10 @@ use core::hash::{Hash, Hasher};
 use crate::accessor::Accessor;
 use crate::field::Field;
 
+// For docs.
+#[expect(unused_imports)]
+use crate::field_accessor;
+
 /// A specialized container pairing a [`Field`] with its [`Accessor`].
 #[derive(Debug, Clone, Copy)]
 pub struct FieldAccessor<S, T> {
@@ -44,7 +48,7 @@ impl<S, T> Eq for FieldAccessor<S, T> {}
 // impl<S, T> for
 
 /// Creates a [`FieldAccessor`] that ensures both [`Field`] and
-/// [`Accessors`] are pointing to the same field path.
+/// [`Accessor`] are pointing to the same field path.
 ///
 /// ## Example
 ///
