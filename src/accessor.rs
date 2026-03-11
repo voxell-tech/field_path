@@ -42,12 +42,8 @@ use crate::accessor;
 /// *FOO_ACC.get_mut(&mut foo) = 999;
 /// assert_eq!(foo.value, 999);
 /// ```
-#[derive(Debug, Hash, Clone, Copy)]
-pub struct Accessor<S, T>
-where
-    S: 'static,
-    T: 'static,
-{
+#[derive(Debug)]
+pub struct Accessor<S, T> {
     ref_fn: fn(&S) -> &T,
     mut_fn: fn(&mut S) -> &mut T,
 }
@@ -72,13 +68,27 @@ impl<S, T> Accessor<S, T> {
     pub fn get_mut<'a>(&self, source: &'a mut S) -> &'a mut T {
         (self.mut_fn)(source)
     }
+}
 
+impl<S, T> Accessor<S, T>
+where
+    S: 'static,
+    T: 'static,
+{
     /// Erases the type by converting it into an [`UntypedAccessor`].
     #[inline]
     pub const fn untyped(&self) -> UntypedAccessor {
         UntypedAccessor::new(self.ref_fn, self.mut_fn)
     }
 }
+
+impl<S, T> Clone for Accessor<S, T> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<S, T> Copy for Accessor<S, T> {}
 
 /// Creates an [`Accessor`] that ensures the fields being accessed are
 /// correct for both immutable and mutable reference.
@@ -175,7 +185,11 @@ impl UntypedAccessor {
 
     /// Attempt to re-interpret this accessor as a typed [`Accessor`],
     /// returning `None` if the [`TypeId`]s do not match.
-    pub fn typed<S, T>(self) -> Option<Accessor<S, T>> {
+    pub fn typed<S, T>(self) -> Option<Accessor<S, T>>
+    where
+        S: 'static,
+        T: 'static,
+    {
         if self.source_id == TypeId::of::<S>()
             && self.target_id == TypeId::of::<T>()
         {
@@ -189,14 +203,22 @@ impl UntypedAccessor {
     }
 }
 
-impl<S, T> From<Accessor<S, T>> for UntypedAccessor {
+impl<S, T> From<Accessor<S, T>> for UntypedAccessor
+where
+    S: 'static,
+    T: 'static,
+{
     #[inline]
     fn from(accessor: Accessor<S, T>) -> Self {
         accessor.untyped()
     }
 }
 
-impl<S, T> From<&Accessor<S, T>> for UntypedAccessor {
+impl<S, T> From<&Accessor<S, T>> for UntypedAccessor
+where
+    S: 'static,
+    T: 'static,
+{
     #[inline]
     fn from(accessor: &Accessor<S, T>) -> Self {
         accessor.untyped()

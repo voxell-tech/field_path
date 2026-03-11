@@ -23,7 +23,10 @@ impl FieldAccessorRegistry {
     pub fn register_field<S, T>(
         &mut self,
         FieldAccessor { field, accessor }: FieldAccessor<S, T>,
-    ) {
+    ) where
+        S: 'static,
+        T: 'static,
+    {
         self.register(field.untyped(), accessor);
     }
 }

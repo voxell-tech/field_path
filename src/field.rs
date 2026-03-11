@@ -9,6 +9,7 @@
 //! that need to store, compare, or retrieve fields dynamically.
 
 use core::any::TypeId;
+use core::hash::{Hash, Hasher};
 use core::marker::PhantomData;
 
 // For docs.
@@ -47,7 +48,7 @@ use crate::field;
 ///
 /// assert_eq!(PLAYER_AGE.field_path(), "::age");
 /// ```
-#[derive(Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug)]
 pub struct Field<S, T> {
     /// The path of the target field in the source.
     ///
@@ -91,7 +92,34 @@ where
     }
 }
 
-impl<S, T> Copy for Field<S, T> {}
+impl<S, T> Hash for Field<S, T> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.field_path.hash(state);
+    }
+}
+
+impl<S, T> PartialEq for Field<S, T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.field_path == other.field_path
+    }
+}
+
+impl<S, T> Eq for Field<S, T> {}
+
+impl<S, T> PartialOrd for Field<S, T> {
+    fn partial_cmp(
+        &self,
+        other: &Self,
+    ) -> Option<core::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl<S, T> Ord for Field<S, T> {
+    fn cmp(&self, other: &Self) -> core::cmp::Ordering {
+        self.field_path.cmp(other.field_path)
+    }
+}
 
 impl<S, T> Clone for Field<S, T> {
     #[inline]
@@ -99,6 +127,8 @@ impl<S, T> Clone for Field<S, T> {
         *self
     }
 }
+
+impl<S, T> Copy for Field<S, T> {}
 
 /// Builder used internally by the [`field!`] macro to construct
 /// [`Field`]s.
@@ -251,10 +281,7 @@ impl UntypedField {
 
     /// Converts into a typed [`Field<S, T>`] without type checks.
     #[inline]
-    pub const fn typed_unchecked<S, T>(self) -> Field<S, T>
-    where
-        S: 'static,
-    {
+    pub const fn typed_unchecked<S, T>(self) -> Field<S, T> {
         Field::new(self.field_path)
     }
 }

@@ -5,24 +5,19 @@
 //! Use the [`field_accessor!`] macro to ensure that the path name and
 //! the access logic are always synchronized to the same field.
 
+use core::hash::{Hash, Hasher};
+
 use crate::accessor::Accessor;
 use crate::field::Field;
 
 /// A specialized container pairing a [`Field`] with its [`Accessor`].
-pub struct FieldAccessor<S, T>
-where
-    S: 'static,
-    T: 'static,
-{
+#[derive(Debug, Clone, Copy)]
+pub struct FieldAccessor<S, T> {
     pub field: Field<S, T>,
     pub accessor: Accessor<S, T>,
 }
 
-impl<S, T> FieldAccessor<S, T>
-where
-    S: 'static,
-    T: 'static,
-{
+impl<S, T> FieldAccessor<S, T> {
     #[inline]
     pub const fn new(
         field: Field<S, T>,
@@ -31,6 +26,22 @@ where
         Self { field, accessor }
     }
 }
+
+impl<S, T> Hash for FieldAccessor<S, T> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.field.hash(state);
+    }
+}
+
+impl<S, T> PartialEq for FieldAccessor<S, T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.field.eq(&other.field)
+    }
+}
+
+impl<S, T> Eq for FieldAccessor<S, T> {}
+
+// impl<S, T> for
 
 /// Creates a [`FieldAccessor`] that ensures both [`Field`] and
 /// [`Accessors`] are pointing to the same field path.
