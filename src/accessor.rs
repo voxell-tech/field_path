@@ -42,13 +42,18 @@ use crate::accessor;
 /// *FOO_ACC.get_mut(&mut foo) = 999;
 /// assert_eq!(foo.value, 999);
 /// ```
-#[derive(Debug, Clone, Copy)]
-pub struct Accessor<S: 'static, T: 'static> {
+#[derive(Debug, Hash, Clone, Copy)]
+pub struct Accessor<S, T>
+where
+    S: 'static,
+    T: 'static,
+{
     ref_fn: fn(&S) -> &T,
     mut_fn: fn(&mut S) -> &mut T,
 }
 
 impl<S, T> Accessor<S, T> {
+    #[inline]
     pub const fn new(
         ref_fn: fn(&S) -> &T,
         mut_fn: fn(&mut S) -> &mut T,
@@ -56,15 +61,18 @@ impl<S, T> Accessor<S, T> {
         Self { ref_fn, mut_fn }
     }
 
+    #[inline]
     pub fn get_ref<'a>(&self, source: &'a S) -> &'a T {
         (self.ref_fn)(source)
     }
 
+    #[inline]
     pub fn get_mut<'a>(&self, source: &'a mut S) -> &'a mut T {
         (self.mut_fn)(source)
     }
 
-    pub const fn untyped(self) -> UntypedAccessor {
+    #[inline]
+    pub const fn untyped(&self) -> UntypedAccessor {
         UntypedAccessor::new(self.ref_fn, self.mut_fn)
     }
 }
@@ -91,13 +99,17 @@ impl<S, T> Accessor<S, T> {
 macro_rules! accessor {
     (<$source:ty>) => {
         $crate::accessor::Accessor::new(
+            #[inline(always)]
             |s: &$source| s,
+            #[inline(always)]
             |s: &mut $source| s,
         )
     };
     (<$source:ty>$(::$field:tt)+) => {
         $crate::accessor::Accessor::new(
+            #[inline(always)]
             |s: &$source| &s$(.$field)+,
+            #[inline(always)]
             |s: &mut $source| &mut s$(.$field)+
         )
     };
@@ -118,10 +130,15 @@ pub struct UntypedAccessor {
 
 impl UntypedAccessor {
     /// Create a new type-erased accessor from a typed accessor pair.
-    pub const fn new<S: 'static, T: 'static>(
+    #[inline]
+    pub const fn new<S, T>(
         ref_fn: fn(&S) -> &T,
         mut_fn: fn(&mut S) -> &mut T,
-    ) -> Self {
+    ) -> Self
+    where
+        S: 'static,
+        T: 'static,
+    {
         Self {
             ref_fn: ref_fn as *const (),
             mut_fn: mut_fn as *const (),
@@ -170,7 +187,15 @@ impl UntypedAccessor {
 }
 
 impl<S, T> From<Accessor<S, T>> for UntypedAccessor {
+    #[inline]
     fn from(accessor: Accessor<S, T>) -> Self {
+        accessor.untyped()
+    }
+}
+
+impl<S, T> From<&Accessor<S, T>> for UntypedAccessor {
+    #[inline]
+    fn from(accessor: &Accessor<S, T>) -> Self {
         accessor.untyped()
     }
 }

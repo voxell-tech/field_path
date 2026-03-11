@@ -47,7 +47,7 @@ use crate::field;
 ///
 /// assert_eq!(PLAYER_AGE.field_path(), "::age");
 /// ```
-#[derive(Debug, Hash, PartialEq, Eq)]
+#[derive(Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Field<S, T> {
     /// The path of the target field in the source.
     ///
@@ -65,6 +65,7 @@ impl<S, T> Field<S, T> {
     /// Construct a new [`Field`] from a raw field path string.
     ///
     /// Prefer the [`field!`] macro for type safety!
+    #[inline]
     pub const fn new(field_path: &'static str) -> Self {
         Self {
             field_path,
@@ -84,6 +85,7 @@ where
     T: 'static,
 {
     /// Converts into a [`UntypedField`] type.
+    #[inline]
     pub const fn untyped(&self) -> UntypedField {
         UntypedField::new::<S, T>(self.field_path)
     }
@@ -92,6 +94,7 @@ where
 impl<S, T> Copy for Field<S, T> {}
 
 impl<S, T> Clone for Field<S, T> {
+    #[inline]
     fn clone(&self) -> Self {
         *self
     }
@@ -121,6 +124,7 @@ impl<S, T> _FieldBuilder<S, T> {
         }
     }
 
+    #[inline]
     pub const fn build(self) -> Field<S, T> {
         Field {
             field_path: self.field_path,
@@ -178,9 +182,12 @@ pub struct UntypedField {
 }
 
 impl UntypedField {
-    pub const fn new<S: 'static, T: 'static>(
-        field_path: &'static str,
-    ) -> Self {
+    #[inline]
+    pub const fn new<S, T>(field_path: &'static str) -> Self
+    where
+        S: 'static,
+        T: 'static,
+    {
         Self {
             source_id: TypeId::of::<S>(),
             target_id: TypeId::of::<T>(),
@@ -188,10 +195,12 @@ impl UntypedField {
         }
     }
 
+    #[inline]
     pub const fn placeholder() -> Self {
         Self::placeholder_with_path("$")
     }
 
+    #[inline]
     pub const fn placeholder_with_path(
         field_path: &'static str,
     ) -> Self {
@@ -199,25 +208,31 @@ impl UntypedField {
     }
 
     /// Get the [`TypeId`] of the source type.
+    #[inline]
     pub const fn source_id(&self) -> TypeId {
         self.source_id
     }
 
     /// Get the [`TypeId`] of the target type.
+    #[inline]
     pub const fn target_id(&self) -> TypeId {
         self.target_id
     }
 
     /// See [`Field::field_path`].
+    #[inline]
     pub const fn field_path(&self) -> &'static str {
         self.field_path
     }
 
     /// Attempt to re-interpret this accessor as a typed [`Field`],
     /// returning `None` if the [`TypeId`]s do not match.
-    pub fn typed<S: 'static, T: 'static>(
-        self,
-    ) -> Option<Field<S, T>> {
+    #[inline]
+    pub fn typed<S, T>(self) -> Option<Field<S, T>>
+    where
+        S: 'static,
+        T: 'static,
+    {
         if self.source_id == TypeId::of::<S>()
             && self.target_id == TypeId::of::<T>()
         {
@@ -228,7 +243,11 @@ impl UntypedField {
     }
 
     /// Converts into a typed [`Field<S, T>`] without type checks.
-    pub const fn typed_unchecked<S: 'static, T>(self) -> Field<S, T> {
+    #[inline]
+    pub const fn typed_unchecked<S, T>(self) -> Field<S, T>
+    where
+        S: 'static,
+    {
         Field::new(self.field_path)
     }
 }
@@ -238,6 +257,7 @@ where
     S: 'static,
     T: 'static,
 {
+    #[inline]
     fn from(field: Field<S, T>) -> Self {
         field.untyped()
     }
@@ -248,6 +268,7 @@ where
     S: 'static,
     T: 'static,
 {
+    #[inline]
     fn from(field: &Field<S, T>) -> Self {
         field.untyped()
     }
