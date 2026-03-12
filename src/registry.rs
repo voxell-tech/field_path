@@ -11,19 +11,22 @@ use core::hash::Hash;
 use hashbrown::HashMap;
 
 use crate::accessor::{Accessor, UntypedAccessor};
-use crate::field::{Field, UntypedField};
+use crate::field::UntypedField;
+use crate::field_accessor::FieldAccessor;
 
 /// An [`AccessorRegistry`] using [`UntypedField`] as the key type.
 pub type FieldAccessorRegistry = AccessorRegistry<UntypedField>;
 
 impl FieldAccessorRegistry {
-    /// Registers a [`Field`] and [`Accessor`] pair in a type-safe
-    /// manner.
-    pub fn register_typed<S, T>(
+    /// Registers a [`FieldAccessor`] pair in a type-safe manner.
+    #[inline]
+    pub fn register_field<S, T>(
         &mut self,
-        field: Field<S, T>,
-        accessor: Accessor<S, T>,
-    ) {
+        FieldAccessor { field, accessor }: FieldAccessor<S, T>,
+    ) where
+        S: 'static,
+        T: 'static,
+    {
         self.register(field.untyped(), accessor);
     }
 }
@@ -57,6 +60,7 @@ pub struct AccessorRegistry<K> {
 
 impl<K> AccessorRegistry<K> {
     /// Construct an empty [`AccessorRegistry`].
+    #[inline]
     pub fn new() -> Self {
         Self {
             accessors: HashMap::new(),
@@ -68,6 +72,7 @@ impl<K: Eq + Hash> AccessorRegistry<K> {
     /// Registers an [`UntypedAccessor`] for a given key.
     ///
     /// Will overwrite existing accessor.
+    #[inline]
     pub fn register(
         &mut self,
         key: K,
@@ -80,10 +85,14 @@ impl<K: Eq + Hash> AccessorRegistry<K> {
     ///
     /// Returns an [`AccessorRegErr`] if the key does not exist or
     /// if the types do not match.
-    pub fn get<S: 'static, T: 'static>(
+    pub fn get<S, T>(
         &self,
         key: &K,
-    ) -> Result<Accessor<S, T>, AccessorRegErr> {
+    ) -> Result<Accessor<S, T>, AccessorRegErr>
+    where
+        S: 'static,
+        T: 'static,
+    {
         self.accessors
             .get(key)
             .ok_or(AccessorRegErr::KeyNotFound)?
@@ -93,6 +102,7 @@ impl<K: Eq + Hash> AccessorRegistry<K> {
 }
 
 impl<K> Default for AccessorRegistry<K> {
+    #[inline]
     fn default() -> Self {
         Self {
             accessors: HashMap::new(),

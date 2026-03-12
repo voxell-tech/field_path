@@ -35,7 +35,7 @@ types.
 ```rust
 use field_path::registry::FieldAccessorRegistry;
 use field_path::field;
-use field_path::accessor;
+use field_path::field_accessor;
 
 #[derive(Default)]
 struct Vec2<T> {
@@ -47,7 +47,7 @@ let mut registry = FieldAccessorRegistry::default();
 let field = field!(<Vec2<f32>>::x);
 
 // Register accessors.
-registry.register_typed(field, accessor!(<Vec2<f32>>::x));
+registry.register_field(field_accessor!(<Vec2<f32>>::x));
 
 // Access field generically.
 let mut v = Vec2::default();

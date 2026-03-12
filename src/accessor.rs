@@ -42,13 +42,14 @@ use crate::accessor;
 /// *FOO_ACC.get_mut(&mut foo) = 999;
 /// assert_eq!(foo.value, 999);
 /// ```
-#[derive(Debug, Clone, Copy)]
-pub struct Accessor<S: 'static, T: 'static> {
+#[derive(Debug)]
+pub struct Accessor<S, T> {
     ref_fn: fn(&S) -> &T,
     mut_fn: fn(&mut S) -> &mut T,
 }
 
 impl<S, T> Accessor<S, T> {
+    #[inline]
     pub const fn new(
         ref_fn: fn(&S) -> &T,
         mut_fn: fn(&mut S) -> &mut T,
@@ -56,18 +57,38 @@ impl<S, T> Accessor<S, T> {
         Self { ref_fn, mut_fn }
     }
 
+    /// Get an immutable reference to the target type.
+    #[inline]
     pub fn get_ref<'a>(&self, source: &'a S) -> &'a T {
         (self.ref_fn)(source)
     }
 
+    /// Get a mutable reference to the target type.
+    #[inline]
     pub fn get_mut<'a>(&self, source: &'a mut S) -> &'a mut T {
         (self.mut_fn)(source)
     }
+}
 
-    pub const fn untyped(self) -> UntypedAccessor {
+impl<S, T> Accessor<S, T>
+where
+    S: 'static,
+    T: 'static,
+{
+    /// Erases the type by converting it into an [`UntypedAccessor`].
+    #[inline]
+    pub const fn untyped(&self) -> UntypedAccessor {
         UntypedAccessor::new(self.ref_fn, self.mut_fn)
     }
 }
+
+impl<S, T> Clone for Accessor<S, T> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<S, T> Copy for Accessor<S, T> {}
 
 /// Creates an [`Accessor`] that ensures the fields being accessed are
 /// correct for both immutable and mutable reference.
@@ -91,13 +112,17 @@ impl<S, T> Accessor<S, T> {
 macro_rules! accessor {
     (<$source:ty>) => {
         $crate::accessor::Accessor::new(
+            #[inline(always)]
             |s: &$source| s,
+            #[inline(always)]
             |s: &mut $source| s,
         )
     };
     (<$source:ty>$(::$field:tt)+) => {
         $crate::accessor::Accessor::new(
+            #[inline(always)]
             |s: &$source| &s$(.$field)+,
+            #[inline(always)]
             |s: &mut $source| &mut s$(.$field)+
         )
     };
@@ -118,10 +143,15 @@ pub struct UntypedAccessor {
 
 impl UntypedAccessor {
     /// Create a new type-erased accessor from a typed accessor pair.
-    pub const fn new<S: 'static, T: 'static>(
+    #[inline]
+    pub const fn new<S, T>(
         ref_fn: fn(&S) -> &T,
         mut_fn: fn(&mut S) -> &mut T,
-    ) -> Self {
+    ) -> Self
+    where
+        S: 'static,
+        T: 'static,
+    {
         Self {
             ref_fn: ref_fn as *const (),
             mut_fn: mut_fn as *const (),
@@ -155,7 +185,11 @@ impl UntypedAccessor {
 
     /// Attempt to re-interpret this accessor as a typed [`Accessor`],
     /// returning `None` if the [`TypeId`]s do not match.
-    pub fn typed<S, T>(self) -> Option<Accessor<S, T>> {
+    pub fn typed<S, T>(self) -> Option<Accessor<S, T>>
+    where
+        S: 'static,
+        T: 'static,
+    {
         if self.source_id == TypeId::of::<S>()
             && self.target_id == TypeId::of::<T>()
         {
@@ -169,8 +203,24 @@ impl UntypedAccessor {
     }
 }
 
-impl<S, T> From<Accessor<S, T>> for UntypedAccessor {
+impl<S, T> From<Accessor<S, T>> for UntypedAccessor
+where
+    S: 'static,
+    T: 'static,
+{
+    #[inline]
     fn from(accessor: Accessor<S, T>) -> Self {
+        accessor.untyped()
+    }
+}
+
+impl<S, T> From<&Accessor<S, T>> for UntypedAccessor
+where
+    S: 'static,
+    T: 'static,
+{
+    #[inline]
+    fn from(accessor: &Accessor<S, T>) -> Self {
         accessor.untyped()
     }
 }
