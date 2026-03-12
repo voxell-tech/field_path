@@ -36,10 +36,10 @@ impl FieldAccessorRegistry {
 /// Provides convenient registration of typed accessors and
 /// retrieval as typed [`Accessor`]s with runtime checking.
 ///
-/// # Example
+/// ## Example
 /// ```
-/// use field_path::registry::AccessorRegistry;
 /// use field_path::accessor;
+/// use field_path::registry::AccessorRegistry;
 ///
 /// struct Foo { value: i32 }
 ///
