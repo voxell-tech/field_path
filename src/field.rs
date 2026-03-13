@@ -26,15 +26,15 @@ use crate::field;
 /// A `Field` can also be created at compile time, allowing us to
 /// create `const` or `static` fields.
 ///
-/// # Validation
+/// ## Validation
 ///
 /// The [`field!`] macro ensures that both the path and type used are
 /// valid. Constructing `Field` manually may result in mismatches.
 ///
-/// # Example
+/// ## Example
 /// ```
-/// use field_path::field::Field;
 /// use field_path::field;
+/// use field_path::field::Field;
 /// use field_path::stringify_field;
 ///
 /// struct Player {
@@ -166,11 +166,11 @@ impl<S, T> _FieldBuilder<S, T> {
 
 /// Creates a [`Field`] with path and type safety.
 ///
-/// # Example
+/// ## Example
 ///
 /// ```
-/// use field_path::field::Field;
 /// use field_path::field;
+/// use field_path::field::Field;
 ///
 /// struct Player {
 ///     name: String,
@@ -314,7 +314,7 @@ where
 /// auto-completion of nested fields while still being able to generate
 /// "stringify" field paths from raw tokens!
 ///
-/// # Example
+/// ## Example
 ///
 /// ```
 /// use field_path::stringify_field;

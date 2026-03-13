@@ -33,9 +33,10 @@ types.
 ## Example
 
 ```rust
-use field_path::registry::FieldAccessorRegistry;
 use field_path::field;
 use field_path::field_accessor;
+use field_path::field_accessor::FieldAccessor;
+use field_path::registry::FieldAccessorRegistry;
 
 #[derive(Default)]
 struct Vec2<T> {
@@ -43,16 +44,17 @@ struct Vec2<T> {
     pub y: T,
 }
 
+const FIELD_ACC: FieldAccessor<Vec2<f32>, f32> = field_accessor!(<Vec2<f32>>::x);
+
 let mut registry = FieldAccessorRegistry::default();
-let field = field!(<Vec2<f32>>::x);
 
 // Register accessors.
-registry.register_field(field_accessor!(<Vec2<f32>>::x));
+registry.register_field(FIELD_ACC);
 
 // Access field generically.
 let mut v = Vec2::default();
 let accessor =
-    registry.get::<Vec2<f32>, f32>(&field.untyped()).unwrap();
+    registry.get::<Vec2<f32>, f32>(&FIELD_ACC.field.untyped()).unwrap();
 
 *accessor.get_mut(&mut v) = 42.0;
 assert_eq!(accessor.get_ref(&v), &42.0);
