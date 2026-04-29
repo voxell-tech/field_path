@@ -9,10 +9,3 @@ readme = "README.md"
 exclude = ["/assets/", "/.github/", "/examples/"]
 keywords = ["macro", "field", "path", "accessor", "registry"]
 categories = ["no-std", "rust-patterns"]
-
-[dependencies]
-hashbrown = { version = "0.16", default-features = false, features = ["default-hasher", "inline-more"], optional = true }
-
-[features]
-default = ["registry"]
-registry = ["dep:hashbrown"]
