@@ -55,7 +55,7 @@ pub struct Field<S, T> {
     /// Example: `Transform::translation::x` will have a field path
     /// of `"::translation::x"`.
     field_path: &'static str,
-    _marker: PhantomData<(S, T)>,
+    _marker: PhantomData<fn() -> (S, T)>,
 }
 
 impl<S, T> Field<S, T> {
