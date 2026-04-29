@@ -21,10 +21,8 @@ accessors that preserve type information.
   field path within a struct.
 - `Accessor`: A generic wrapper providing read and write access
   to a field.
-- `FieldAccessorRegistry`: A mapping between fields and their
-  accessors for lookup and dynamic use.
-
-  (only available with the "registry" feature, enabled by default)
+- `FieldAccessor`: A container pairing a `Field` with its `Accessor`,
+  ensuring both always refer to the same field path.
 
 Together, these components allow building flexible systems that can
 access or manipulate struct data without tightly coupling to specific
@@ -33,10 +31,8 @@ types.
 ## Example
 
 ```rust
-use field_path::field;
 use field_path::field_accessor;
 use field_path::field_accessor::FieldAccessor;
-use field_path::registry::FieldAccessorRegistry;
 
 #[derive(Default)]
 struct Vec2<T> {
@@ -46,18 +42,11 @@ struct Vec2<T> {
 
 const FIELD_ACC: FieldAccessor<Vec2<f32>, f32> = field_accessor!(<Vec2<f32>>::x);
 
-let mut registry = FieldAccessorRegistry::default();
+assert_eq!(FIELD_ACC.field.field_path(), "::x");
 
-// Register accessors.
-registry.register_field(FIELD_ACC);
-
-// Access field generically.
 let mut v = Vec2::default();
-let accessor =
-    registry.get::<Vec2<f32>, f32>(&FIELD_ACC.field.untyped()).unwrap();
-
-*accessor.get_mut(&mut v) = 42.0;
-assert_eq!(accessor.get_ref(&v), &42.0);
+*FIELD_ACC.accessor.get_mut(&mut v) = 42.0;
+assert_eq!(FIELD_ACC.accessor.get_ref(&v), &42.0);
 ```
 
 ## Join the community!
