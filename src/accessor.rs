@@ -128,15 +128,21 @@ macro_rules! accessor {
     };
 }
 
+#[derive(Debug, Clone, Copy)]
+struct FnPtr(*const ());
+
+unsafe impl Send for FnPtr {}
+unsafe impl Sync for FnPtr {}
+
 /// A type-erased version of [`Accessor`].
 ///
-/// Stores the raw function pointers as `*const ()` along with
-/// [`TypeId`]s of both source and target. This allows
-/// dynamically checking and restoring the original [`Accessor`].
+/// Stores the raw function pointers along with [`TypeId`]s of both
+/// source and target. This allows dynamically checking and restoring
+/// the original [`Accessor`].
 #[derive(Debug, Clone, Copy)]
 pub struct UntypedAccessor {
-    ref_fn: *const (),
-    mut_fn: *const (),
+    ref_fn: FnPtr,
+    mut_fn: FnPtr,
     source_id: TypeId,
     target_id: TypeId,
 }
@@ -153,8 +159,8 @@ impl UntypedAccessor {
         T: 'static,
     {
         Self {
-            ref_fn: ref_fn as *const (),
-            mut_fn: mut_fn as *const (),
+            ref_fn: FnPtr(ref_fn as *const ()),
+            mut_fn: FnPtr(mut_fn as *const ()),
             source_id: TypeId::of::<S>(),
             target_id: TypeId::of::<T>(),
         }
@@ -173,12 +179,12 @@ impl UntypedAccessor {
         unsafe {
             Accessor {
                 ref_fn: core::mem::transmute::<*const (), fn(&S) -> &T>(
-                    self.ref_fn,
+                    self.ref_fn.0,
                 ),
                 mut_fn: core::mem::transmute::<
                     *const (),
                     fn(&mut S) -> &mut T,
-                >(self.mut_fn),
+                >(self.mut_fn.0),
             }
         }
     }
