@@ -10,6 +10,10 @@
 
 use core::any::TypeId;
 
+use func_pointers::{MutFn, MutFnPtr, RefFn, RefFnPtr};
+
+pub mod func_pointers;
+
 // For docs.
 #[expect(unused_imports)]
 use crate::accessor;
@@ -44,8 +48,8 @@ use crate::accessor;
 /// ```
 #[derive(Debug)]
 pub struct Accessor<S, T> {
-    ref_fn: fn(&S) -> &T,
-    mut_fn: fn(&mut S) -> &mut T,
+    ref_fn: RefFn<S, T>,
+    mut_fn: MutFn<S, T>,
 }
 
 impl<S, T> Accessor<S, T> {
@@ -128,12 +132,6 @@ macro_rules! accessor {
     };
 }
 
-#[derive(Debug, Clone, Copy)]
-struct FnPtr(*const ());
-
-unsafe impl Send for FnPtr {}
-unsafe impl Sync for FnPtr {}
-
 /// A type-erased version of [`Accessor`].
 ///
 /// Stores the raw function pointers along with [`TypeId`]s of both
@@ -141,8 +139,8 @@ unsafe impl Sync for FnPtr {}
 /// the original [`Accessor`].
 #[derive(Debug, Clone, Copy)]
 pub struct UntypedAccessor {
-    ref_fn: FnPtr,
-    mut_fn: FnPtr,
+    ref_fn: RefFnPtr,
+    mut_fn: MutFnPtr,
     source_id: TypeId,
     target_id: TypeId,
 }
@@ -159,8 +157,8 @@ impl UntypedAccessor {
         T: 'static,
     {
         Self {
-            ref_fn: FnPtr(ref_fn as *const ()),
-            mut_fn: FnPtr(mut_fn as *const ()),
+            ref_fn: RefFnPtr::new(ref_fn),
+            mut_fn: MutFnPtr::new(mut_fn),
             source_id: TypeId::of::<S>(),
             target_id: TypeId::of::<T>(),
         }
@@ -178,13 +176,8 @@ impl UntypedAccessor {
     ) -> Accessor<S, T> {
         unsafe {
             Accessor {
-                ref_fn: core::mem::transmute::<*const (), fn(&S) -> &T>(
-                    self.ref_fn.0,
-                ),
-                mut_fn: core::mem::transmute::<
-                    *const (),
-                    fn(&mut S) -> &mut T,
-                >(self.mut_fn.0),
+                ref_fn: self.ref_fn.typed_unchecked::<S, T>(),
+                mut_fn: self.mut_fn.typed_unchecked::<S, T>(),
             }
         }
     }
