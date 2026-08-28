@@ -13,15 +13,15 @@ referencing and accessing nested fields within structs.
 The crate is designed to make it easier to generically inspect or
 mutate fields without relying on heavy reflection systems or unsafe
 code. It does this through a combination of field identifiers and
-accessors that preserve type information.
+lenses that preserve type information.
 
 ## Core Concepts
 
 - `Field`: Represents a unique, type-safe identifier for a
   field path within a struct.
-- `Accessor`: A generic wrapper providing read and write access
+- `Lens`: A generic wrapper providing read and write access
   to a field.
-- `FieldAccessor`: A container pairing a `Field` with its `Accessor`,
+- `Path`: A container pairing a `Field` with its `Lens`,
   ensuring both always refer to the same field path.
 
 Together, these components allow building flexible systems that can
@@ -31,8 +31,8 @@ types.
 ## Example
 
 ```rust
-use field_path::field_accessor;
-use field_path::field_accessor::FieldAccessor;
+use field_path::path;
+use field_path::path::Path;
 
 #[derive(Default)]
 struct Vec2<T> {
@@ -40,13 +40,13 @@ struct Vec2<T> {
     pub y: T,
 }
 
-const FIELD_ACC: FieldAccessor<Vec2<f32>, f32> = field_accessor!(<Vec2<f32>>::x);
+const FIELD_PATH: Path<Vec2<f32>, f32> = path!(<Vec2<f32>>::x);
 
-assert_eq!(FIELD_ACC.field.field_path(), "::x");
+assert_eq!(FIELD_PATH.field.field_path(), "::x");
 
 let mut v = Vec2::default();
-*FIELD_ACC.accessor.get_mut(&mut v) = 42.0;
-assert_eq!(FIELD_ACC.accessor.get_ref(&v), &42.0);
+*FIELD_PATH.lens.get_mut(&mut v) = 42.0;
+assert_eq!(FIELD_PATH.lens.get_ref(&v), &42.0);
 ```
 
 ## Join the community!
