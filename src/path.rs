@@ -15,7 +15,7 @@ use crate::lens::Lens;
 use crate::path;
 
 /// A specialized container pairing a [`Field`] with its [`Lens`].
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug)]
 pub struct Path<S, T> {
     pub field: Field<S, T>,
     pub lens: Lens<S, T>,
@@ -42,7 +42,13 @@ impl<S, T> PartialEq for Path<S, T> {
 
 impl<S, T> Eq for Path<S, T> {}
 
-// impl<S, T> for
+impl<S, T> Clone for Path<S, T> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<S, T> Copy for Path<S, T> {}
 
 /// Creates a [`Path`] that ensures both [`Field`] and
 /// [`Lens`] are pointing to the same field path.
