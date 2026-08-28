@@ -1,4 +1,4 @@
-/// A type-erased immutable field accessor function pointer.
+/// A type-erased immutable lens function pointer.
 #[derive(Debug, Clone, Copy)]
 pub struct RefFnPtr(*const ());
 
@@ -25,7 +25,7 @@ impl RefFnPtr {
     }
 }
 
-/// A type-erased mutable field accessor function pointer.
+/// A type-erased mutable lens function pointer.
 #[derive(Debug, Clone, Copy)]
 pub struct MutFnPtr(*const ());
 
@@ -52,10 +52,10 @@ impl MutFnPtr {
     }
 }
 
-/// Immutable field accessor function: `fn(&S) -> &T`.
+/// Immutable lens function: `fn(&S) -> &T`.
 pub type RefFn<S, T> = fn(&S) -> &T;
 
-/// Mutable field accessor function: `fn(&mut S) -> &mut T`.
+/// Mutable lens function: `fn(&mut S) -> &mut T`.
 pub type MutFn<S, T> = fn(&mut S) -> &mut T;
 
 #[cfg(test)]
