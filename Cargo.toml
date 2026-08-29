@@ -1,10 +1,10 @@
 [package]
 name = "field_path"
 description = "Type-safe, no-std field access and reflection utilities."
-version = "0.5.0"
+version = "0.5.1"
 edition = "2024"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/voxell-tech/field_path"
+repository = "https://github.com/nixonyh/field_path"
 readme = "README.md"
 exclude = ["/assets/", "/.github/", "/examples/"]
 keywords = ["macro", "field", "path", "lens"]

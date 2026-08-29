@@ -1,10 +1,10 @@
 # Field Path
 
-[![License](https://img.shields.io/badge/license-MIT%2FApache-blue.svg)](https://github.com/voxell-tech/field_path#license)
+[![License](https://img.shields.io/badge/license-MIT%2FApache-blue.svg)](https://github.com/nixonyh/field_path#license)
 [![Crates.io](https://img.shields.io/crates/v/field_path.svg)](https://crates.io/crates/field_path)
 [![Downloads](https://img.shields.io/crates/d/field_path.svg)](https://crates.io/crates/field_path)
 [![Docs](https://docs.rs/field_path/badge.svg)](https://docs.rs/field_path/latest/field_path/)
-[![CI](https://github.com/voxell-tech/field_path/workflows/CI/badge.svg)](https://github.com/voxell-tech/field_path/actions)
+[![CI](https://github.com/nixonyh/field_path/workflows/CI/badge.svg)](https://github.com/nixonyh/field_path/actions)
 [![Discord](https://img.shields.io/discord/442334985471655946.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/Mhnyp6VYEQ)
 
 **Field Path** provides a lightweight and type-safe abstraction for
